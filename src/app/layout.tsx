@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { SmoothScroll } from "@/components/providers/smooth-scroll";
+import { CartProvider } from "@/components/providers/cart-provider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -30,7 +31,9 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col font-sans bg-background text-foreground selection:bg-primary selection:text-primary-foreground dark:selection:bg-primary dark:selection:text-primary-foreground">
         <SmoothScroll>
-          {children}
+          <CartProvider>
+            {children}
+          </CartProvider>
         </SmoothScroll>
       </body>
     </html>

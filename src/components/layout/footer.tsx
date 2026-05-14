@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Globe, Smartphone, Heart } from "lucide-react";
+import { Mail, Globe, Smartphone, Heart, ShieldCheck } from "lucide-react";
 
 export function Footer() {
   return (
@@ -31,29 +31,31 @@ export function Footer() {
                 <Link href="/studio" className="hover:text-white transition-colors">Custom Studio</Link>
               </li>
               <li>
-                <Link href="/about" className="hover:text-white transition-colors">Our Story</Link>
+                <Link href="/collections" className="hover:text-white transition-colors">Curated Collections</Link>
               </li>
               <li>
-                <Link href="/journal" className="hover:text-white transition-colors">Art Journal</Link>
+                <Link href="/about" className="hover:text-white transition-colors">Our Story & Founder</Link>
               </li>
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Support & Admin */}
           <div>
-            <h3 className="font-heading text-xl mb-6 text-slate-200">Support</h3>
+            <h3 className="font-heading text-xl mb-6 text-slate-200">Support & Portal</h3>
             <ul className="flex flex-col gap-4 text-sm text-slate-400">
               <li>
                 <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
               </li>
               <li>
-                <Link href="/shipping" className="hover:text-white transition-colors">Shipping & Returns</Link>
-              </li>
-              <li>
-                <Link href="/track" className="hover:text-white transition-colors">Track Order</Link>
+                <Link href="/track" className="hover:text-white transition-colors">Track My Order</Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link>
+              </li>
+              <li className="pt-2 border-t border-slate-800">
+                <Link href="/admin" className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 font-medium">
+                  <ShieldCheck size={16} /> Admin Portal Login
+                </Link>
               </li>
             </ul>
           </div>
@@ -68,7 +70,7 @@ export function Footer() {
               <input 
                 type="email" 
                 placeholder="Enter your email address" 
-                className="bg-slate-800/50 border border-slate-700 px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors rounded-md"
+                className="bg-slate-800/50 border border-slate-700 px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors rounded-md text-white"
               />
               <button 
                 type="submit" 
@@ -87,7 +89,7 @@ export function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>&copy; {new Date().getFullYear()} GS Canvas. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} GS Canvas. Founder: Govind Gopasukumar. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
