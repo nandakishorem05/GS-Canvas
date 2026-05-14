@@ -29,9 +29,10 @@ export default function AdminLogin() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to login');
+        throw new Error(data.error || 'Invalid username or password');
       }
 
+      localStorage.setItem("admin_logged_in", "true");
       router.push('/admin');
       router.refresh();
     } catch (err: any) {
@@ -50,18 +51,18 @@ export default function AdminLogin() {
       >
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Admin Portal</h1>
-          <p className="text-zinc-400">Sign in to manage your store</p>
+          <p className="text-zinc-400">Sign in with your username and password</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm text-center">
+            <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm text-center font-semibold">
               {error}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-zinc-300">Email Address</Label>
+            <Label htmlFor="email" className="text-zinc-300">Email Address / Username</Label>
             <Input
               id="email"
               type="email"
@@ -69,7 +70,7 @@ export default function AdminLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
-              placeholder="admin@example.com"
+              placeholder="admin@gscanvas.com"
             />
           </div>
 
@@ -89,9 +90,9 @@ export default function AdminLogin() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Authenticating...' : 'Sign In'}
           </Button>
         </form>
       </motion.div>

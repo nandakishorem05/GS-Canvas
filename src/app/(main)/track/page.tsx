@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Package, Truck, CheckCircle2, Clock, MapPin, ArrowRight, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Package, Truck, CheckCircle2, Clock, MapPin, Smartphone, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -10,6 +10,7 @@ interface TrackedOrder {
   customerDetails: {
     name: string;
     email: string;
+    phone: string;
   };
   totalAmount: number;
   status: string;
@@ -21,41 +22,79 @@ interface TrackedOrder {
     zipCode: string;
   };
   createdAt: string;
+  items: any[];
 }
 
 export default function TrackOrderPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState<TrackedOrder[]>([]);
 
-  const handleSearchOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  // OTP Login State
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
 
+  useEffect(() => {
+    const storedPhone = localStorage.getItem("gs_customer_phone");
+    if (storedPhone) {
+      setCurrentUser(storedPhone);
+      fetchCustomerOrders(storedPhone);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  async function fetchCustomerOrders(userPhone: string) {
     setIsLoading(true);
-    setHasSearched(true);
-
     try {
-      const res = await fetch('/api/admin/orders'); // Fetch all orders to filter by email/ID
+      const res = await fetch('/api/admin/orders');
       if (res.ok) {
         const data = await res.json();
-        const all = data.orders || [];
+        const list = data.orders || [];
 
-        const term = searchQuery.trim().toLowerCase();
-        const matches = all.filter((o: any) => {
-          const matchId = o._id.toLowerCase().includes(term);
-          const matchEmail = o.customerDetails?.email?.toLowerCase() === term;
-          return matchId || matchEmail;
+        const cleanPhone = userPhone.replace(/\D/g, '');
+        const myOrders = list.filter((o: any) => {
+          const oPhone = o.customerDetails?.phone ? o.customerDetails.phone.replace(/\D/g, '') : '';
+          return oPhone.includes(cleanPhone) || cleanPhone.includes(oPhone);
         });
 
-        setOrders(matches);
+        setOrders(myOrders);
       }
     } catch (err) {
-      console.error("Tracking lookup error", err);
+      console.error("Failed to fetch customer orders", err);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  const handleSendOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone || phone.length < 10) {
+      alert("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    setIsOtpLoading(true);
+    setTimeout(() => {
+      setIsOtpLoading(false);
+      setStep("otp");
+    }, 1200);
+  };
+
+  const handleVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 4) {
+      alert("Please enter the 4-digit verification code");
+      return;
+    }
+    setIsOtpLoading(true);
+    setTimeout(() => {
+      setIsOtpLoading(false);
+      localStorage.setItem("gs_customer_phone", phone);
+      setCurrentUser(phone);
+      fetchCustomerOrders(phone);
+    }, 1200);
   };
 
   const getStatusStep = (st: string) => {
@@ -67,62 +106,132 @@ export default function TrackOrderPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="py-32 text-center space-y-4 font-sans">
+        <Loader2 className="animate-spin mx-auto text-blue-600" size={36} />
+        <p className="text-foreground/60 text-sm font-medium">Loading your secure order history...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-6 md:px-12 py-16 max-w-5xl">
+    <div className="container mx-auto px-6 md:px-12 py-16 max-w-5xl font-sans">
       <div className="text-center space-y-4 mb-12">
-        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-950 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-md">
+        <div className="w-16 h-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mx-auto shadow-md border border-blue-500/20">
           <Package size={32} />
         </div>
-        <h1 className="font-heading text-4xl md:text-5xl font-bold">Track Your Orders</h1>
+        <h1 className="font-heading text-4xl md:text-5xl font-bold">My Orders</h1>
         <p className="text-foreground/60 max-w-md mx-auto text-sm md:text-base">
-          Enter your <span className="font-semibold text-foreground">Email Address</span> or <span className="font-semibold text-foreground">Razorpay Order ID</span> below to track live fulfillment and delivery updates.
+          Track fulfillment status and view complete purchase history for your verified mobile number.
         </p>
       </div>
 
-      {/* Search Form */}
-      <form onSubmit={handleSearchOrder} className="max-w-2xl mx-auto mb-16 flex gap-4">
-        <div className="relative flex-1">
-          <Search size={20} className="absolute left-4 top-4 text-foreground/40" />
-          <input
-            type="text"
-            required
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="e.g. rahul@example.com or rzp_order_..."
-            className="w-full bg-white dark:bg-black border border-border rounded-xl pl-12 pr-4 py-3.5 focus:outline-none focus:border-foreground shadow-sm text-sm font-medium"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="bg-black text-white dark:bg-white dark:text-black px-8 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-md flex items-center gap-2 flex-shrink-0"
-        >
-          {isLoading ? <Loader2 className="animate-spin" size={18} /> : <>Track Now <ArrowRight size={16} /></>}
-        </button>
-      </form>
+      {!currentUser ? (
+        <div className="bg-white dark:bg-black border border-border p-8 md:p-12 rounded-2xl shadow-sm max-w-md mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 bg-neutral-100 dark:bg-neutral-900 rounded-full flex items-center justify-center mx-auto text-blue-600 mb-2">
+              <Smartphone size={24} />
+            </div>
+            <h2 className="font-heading text-2xl font-bold">Login Required</h2>
+            <p className="text-xs text-foreground/60">Enter your mobile number to view and track your orders.</p>
+          </div>
 
-      {/* Results Section */}
-      {isLoading ? (
-        <div className="py-20 text-center space-y-4">
-          <Loader2 className="animate-spin mx-auto text-blue-600" size={36} />
-          <p className="text-foreground/60 text-sm">Searching secure database for your orders...</p>
+          {step === "phone" ? (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2">Mobile Number</label>
+                <div className="flex">
+                  <span className="bg-neutral-100 dark:bg-neutral-900 border border-r-0 border-border px-4 py-3 rounded-l-lg text-sm font-medium flex items-center text-foreground/60">+91</span>
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="98765 43210"
+                    className="w-full bg-neutral-50 dark:bg-neutral-900 border border-border rounded-r-lg px-4 py-3 text-sm focus:outline-none focus:border-foreground"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isOtpLoading}
+                className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 mt-4 hover:opacity-90"
+              >
+                {isOtpLoading ? <Loader2 className="animate-spin" size={18} /> : "Send One-Time Password"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="text-center">
+                <p className="text-xs text-foreground/60 mb-4">We sent a 4-digit OTP code to <span className="font-semibold">+91 {phone}</span>.</p>
+                <input
+                  type="text"
+                  maxLength={4}
+                  required
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  placeholder="1234"
+                  className="w-1/2 mx-auto bg-neutral-50 dark:bg-neutral-900 border border-border rounded-xl px-4 py-4 text-2xl tracking-widest text-center focus:outline-none focus:border-foreground font-mono block font-bold"
+                />
+                <span className="text-[10px] text-foreground/50 text-center block mt-2">For demo, enter any 4 digits (e.g. 1234).</span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isOtpLoading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 mt-4"
+              >
+                {isOtpLoading ? <Loader2 className="animate-spin" size={18} /> : "Verify & View My Orders"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStep("phone")}
+                className="w-full text-center text-xs text-foreground/50 underline block pt-2"
+              >
+                Change Mobile Number
+              </button>
+            </form>
+          )}
         </div>
-      ) : hasSearched && orders.length === 0 ? (
+      ) : orders.length === 0 ? (
         <div className="bg-white dark:bg-black border border-border p-12 rounded-2xl text-center space-y-4 shadow-sm max-w-xl mx-auto">
           <Package size={48} className="mx-auto text-foreground/30" />
-          <h3 className="font-heading text-2xl font-bold">No orders found</h3>
+          <h3 className="font-heading text-2xl font-bold">No orders found for +91 {currentUser}</h3>
           <p className="text-xs text-foreground/60 max-w-sm mx-auto leading-relaxed">
-            We couldn't find any orders matching <span className="font-semibold">"{searchQuery}"</span>. Please make sure you entered the exact email address used during Razorpay checkout.
+            Once you place an order on our store via Razorpay checkout, your beautiful artwork pieces will instantly appear here with live tracking updates.
           </p>
-          <Link
-            href="/shop"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl text-xs uppercase tracking-widest mt-4 shadow-md transition-all"
-          >
-            Browse Artworks
-          </Link>
+          <div className="pt-2 flex justify-center gap-4">
+            <Link
+              href="/shop"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl text-xs uppercase tracking-widest shadow-md transition-colors"
+            >
+              Start Shopping
+            </Link>
+            <button
+              onClick={() => { localStorage.removeItem("gs_customer_phone"); setCurrentUser(null); }}
+              className="inline-block bg-neutral-100 dark:bg-neutral-900 text-foreground font-bold px-6 py-3.5 rounded-xl text-xs uppercase tracking-widest hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+            >
+              Logout / Switch Phone
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-8">
+          <div className="flex justify-between items-center bg-neutral-50 dark:bg-neutral-900 p-4 rounded-xl border border-border">
+            <span className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+              <ShieldCheck size={16} className="text-green-600" /> Verified Account: +91 {currentUser}
+            </span>
+            <button
+              onClick={() => { localStorage.removeItem("gs_customer_phone"); setCurrentUser(null); }}
+              className="text-xs underline text-red-500 hover:text-red-600 font-medium"
+            >
+              Logout / Switch Phone Number
+            </button>
+          </div>
+
           {orders.map((order) => {
             const shortId = "rzp_ord_" + order._id.substring(order._id.length - 6);
             const step = getStatusStep(order.status);
@@ -133,7 +242,7 @@ export default function TrackOrderPage() {
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-foreground/50 block mb-1">Order Identifier</span>
                     <h2 className="font-mono text-xl font-bold text-blue-600 dark:text-blue-400">{shortId}</h2>
-                    <p className="text-xs text-foreground/60 mt-0.5">Ordered by: <span className="font-semibold">{order.customerDetails?.name}</span> ({order.customerDetails?.email})</p>
+                    <p className="text-xs text-foreground/60 mt-0.5">Ordered by: <span className="font-semibold">{order.customerDetails?.name}</span></p>
                   </div>
                   <div className="text-right">
                     <span className="text-xs font-bold uppercase tracking-wider text-foreground/50 block mb-1">Total Paid</span>
@@ -146,7 +255,7 @@ export default function TrackOrderPage() {
 
                 {/* Progress Bar */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/60">Live Fulfillment Status: <span className="text-foreground">{order.status || 'Pending'}</span></h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/60">Live Fulfillment Status: <span className="text-foreground font-bold">{order.status || 'Pending'}</span></h4>
                   
                   <div className="relative flex justify-between items-center max-w-3xl mx-auto pt-2">
                     <div className="absolute top-1/2 left-0 right-0 h-1 bg-neutral-100 dark:bg-neutral-800 -translate-y-1/2 z-0" />

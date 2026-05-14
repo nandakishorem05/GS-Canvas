@@ -1,12 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Award, ShieldCheck, Sparkles, Heart } from "lucide-react";
 
 export default function AboutPage() {
   return (
-    <div className="container mx-auto px-6 md:px-12 py-16 max-w-6xl space-y-24">
+    <div className="container mx-auto px-6 md:px-12 py-16 max-w-6xl space-y-24 font-sans">
       {/* Hero Section */}
       <div className="text-center space-y-6 max-w-3xl mx-auto">
         <span className="text-xs font-bold uppercase tracking-widest bg-neutral-100 dark:bg-neutral-900 px-4 py-1.5 rounded-full">
@@ -25,7 +24,7 @@ export default function AboutPage() {
         <div className="lg:col-span-5">
           <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-border shadow-lg bg-neutral-200 dark:bg-neutral-800">
             <Image
-              src="/founder.png"
+              src="/founder.jpeg"
               alt="Govind Gopasukumar - Founder of GS Canvas"
               fill
               className="object-cover"
@@ -87,7 +86,7 @@ export default function AboutPage() {
               title: "Bespoke Personalization",
               desc: "From custom sizes to professional pencil portrait sketches done by master artists.",
             },
-          ].map((val, idx) => (
+          ].map((val) => (
             <div key={val.title} className="bg-white dark:bg-black border border-border p-8 rounded-2xl space-y-4 shadow-sm">
               <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-900 text-blue-600 flex items-center justify-center">
                 <val.icon size={24} />

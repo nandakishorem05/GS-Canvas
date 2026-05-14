@@ -1,7 +1,8 @@
 'use client';
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, ShoppingCart, Image as ImageIcon, 
   Users, Settings, Package, Tags, LayoutTemplate,
@@ -10,6 +11,17 @@ import {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (pathname !== '/admin/login') {
+      const loggedIn = localStorage.getItem("admin_logged_in");
+      const hasCookie = document.cookie.includes("admin_token");
+      if (!loggedIn && !hasCookie) {
+        router.push('/admin/login');
+      }
+    }
+  }, [pathname, router]);
 
   // Don't wrap the login page in the dashboard layout
   if (pathname === '/admin/login') {
@@ -28,13 +40,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   const handleLogout = async () => {
-    // Basic client-side logout by removing the cookie
     document.cookie = "admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    localStorage.removeItem("admin_logged_in");
     window.location.href = "/admin/login";
   };
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-white overflow-hidden">
+    <div className="flex h-screen bg-zinc-950 text-white overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col">
         <div className="h-20 flex items-center px-6 border-b border-zinc-800">

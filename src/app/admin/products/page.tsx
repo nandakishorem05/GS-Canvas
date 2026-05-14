@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Plus, Edit2, Trash2, Loader2, X, Image as ImageIcon } from "lucide-react";
-import { mockProducts } from "@/lib/mock-data";
 
 interface AdminProductItem {
   id: string;
@@ -50,15 +49,14 @@ export default function AdminProducts() {
           }));
           setProducts(mapped);
         } else {
-          // Fallback to mock products if DB is empty
-          setProducts(mockProducts);
+          setProducts([]);
         }
       } else {
-        setProducts(mockProducts);
+        setProducts([]);
       }
     } catch (error) {
       console.error('Error fetching admin products:', error);
-      setProducts(mockProducts);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -74,9 +72,8 @@ export default function AdminProducts() {
     setIsSubmitting(true);
 
     try {
-      // First fetch categories to find category ID or pass name
       const catRes = await fetch('/api/admin/categories');
-      let catId = "60c72b2f9b1d8b001c8e4d10"; // dummy fallback
+      let catId = "60c72b2f9b1d8b001c8e4d10"; 
       if (catRes.ok) {
         const catData = await catRes.json();
         const found = catData.categories?.find((c: any) => c.name === formData.category);
@@ -99,7 +96,6 @@ export default function AdminProducts() {
       });
 
       if (res.ok) {
-        // Refresh product list
         await fetchProducts();
         setIsModalOpen(false);
         setFormData({ title: "", description: "", price: "", category: "Canvas Prints", imageUrl: "" });
@@ -118,7 +114,6 @@ export default function AdminProducts() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      // If it's a mock product (non 24 char ID), just remove from UI
       if (id.length !== 24) {
         setProducts(products.filter(p => p.id !== id));
         return;
@@ -136,30 +131,35 @@ export default function AdminProducts() {
   };
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-8 relative font-sans">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="font-heading text-3xl font-bold mb-2">Products</h1>
-          <p className="text-sm text-foreground/60">Manage your product catalog & uploaded photos</p>
+          <h1 className="font-heading text-3xl font-bold mb-2 text-white">Products</h1>
+          <p className="text-sm text-zinc-400">Manage your product catalog & uploaded photos</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-black text-white dark:bg-white dark:text-black px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 hover:opacity-90 shadow-md transition-opacity"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-md transition-colors"
         >
           <Plus size={18} /> Add New Product
         </button>
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center flex flex-col items-center justify-center bg-white dark:bg-black border border-border rounded-xl">
-          <Loader2 className="animate-spin mb-4" size={32} />
-          <p className="text-foreground/60">Loading products from live database...</p>
+        <div className="py-20 text-center flex flex-col items-center justify-center bg-zinc-900 border border-zinc-800 rounded-xl">
+          <Loader2 className="animate-spin mb-4 text-blue-500" size={32} />
+          <p className="text-zinc-400">Loading products from live database...</p>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="py-20 text-center bg-zinc-900 border border-zinc-800 rounded-xl">
+          <p className="text-zinc-400 mb-2 font-medium">No products in database yet.</p>
+          <p className="text-xs text-zinc-600">Click "Add New Product" above to publish your first real canvas print!</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-black border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-foreground/60 uppercase bg-neutral-50 dark:bg-neutral-900 border-b border-border">
+              <thead className="text-xs text-zinc-400 uppercase bg-zinc-950 border-b border-zinc-800">
                 <tr>
                   <th className="px-6 py-4 font-medium">Product Image & Title</th>
                   <th className="px-6 py-4 font-medium">Category</th>
@@ -168,31 +168,31 @@ export default function AdminProducts() {
                   <th className="px-6 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-zinc-800">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors">
+                  <tr key={product.id} className="hover:bg-zinc-800/50 transition-colors">
                     <td className="px-6 py-4 flex items-center gap-4">
-                      <div className="relative w-14 h-14 rounded-lg bg-neutral-100 overflow-hidden border border-border flex-shrink-0">
+                      <div className="relative w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden border border-zinc-700 flex-shrink-0">
                          <Image src={product.image} alt={product.title} fill className="object-cover" />
                       </div>
-                      <span className="font-bold text-base">{product.title}</span>
+                      <span className="font-bold text-base text-white">{product.title}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-neutral-100 dark:bg-neutral-900 px-3 py-1 rounded-md text-xs font-medium">
+                      <span className="bg-zinc-800 px-3 py-1 rounded-md text-xs font-medium text-zinc-300">
                         {product.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-heading font-semibold text-base">₹{product.price.toLocaleString('en-IN')}</td>
+                    <td className="px-6 py-4 font-heading font-semibold text-base text-white">₹{product.price.toLocaleString('en-IN')}</td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/20">
                         Published
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-foreground/60 hover:text-foreground mr-4 p-1"><Edit2 size={18} /></button>
+                      <button className="text-zinc-400 hover:text-white mr-4 p-1"><Edit2 size={18} /></button>
                       <button
                         onClick={() => handleDeleteProduct(product.id)}
-                        className="text-red-500/60 hover:text-red-500 p-1"
+                        className="text-red-400 hover:text-red-300 p-1"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -207,23 +207,23 @@ export default function AdminProducts() {
 
       {/* Add Product Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-black border border-border rounded-2xl w-full max-w-lg p-6 sm:p-8 shadow-2xl space-y-6 relative max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 text-white rounded-2xl w-full max-w-lg p-6 sm:p-8 shadow-2xl space-y-6 relative max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-6 right-6 text-foreground/50 hover:text-foreground"
+              className="absolute top-6 right-6 text-zinc-400 hover:text-white"
             >
               <X size={24} />
             </button>
 
             <div>
               <h2 className="font-heading text-2xl font-bold mb-1">Add New Product</h2>
-              <p className="text-xs text-foreground/60">Upload photo and fill in item details for your storefront</p>
+              <p className="text-xs text-zinc-400">Upload photo and fill in item details for your storefront</p>
             </div>
 
             <form onSubmit={handleSubmitProduct} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-300 flex items-center gap-1">
                   <ImageIcon size={14} /> Product Photo / Image URL
                 </label>
                 <input
@@ -232,13 +232,13 @@ export default function AdminProducts() {
                   value={formData.imageUrl}
                   onChange={handleInputChange}
                   placeholder="https://images.unsplash.com/... or /canvas-sample.png"
-                  className="w-full bg-neutral-50 dark:bg-neutral-900 border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-foreground font-mono text-xs"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 font-mono text-xs text-white placeholder:text-zinc-500"
                 />
-                <span className="text-[10px] text-foreground/50 mt-1 block">Paste an image link or leave blank for default canvas photo.</span>
+                <span className="text-[10px] text-zinc-500 mt-1 block">Paste an image link or leave blank for default canvas photo.</span>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2">Artwork Title</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-300">Artwork Title</label>
                 <input
                   type="text"
                   name="title"
@@ -246,24 +246,24 @@ export default function AdminProducts() {
                   value={formData.title}
                   onChange={handleInputChange}
                   placeholder="e.g. Royal Bengal Tiger Canvas"
-                  className="w-full bg-neutral-50 dark:bg-neutral-900 border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-foreground"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-white placeholder:text-zinc-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2">Category</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-300">Category</label>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full bg-neutral-50 dark:bg-neutral-900 border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-foreground"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 text-white"
                   >
                     {categoriesList.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2">Price (INR)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-300">Price (INR)</label>
                   <input
                     type="number"
                     name="price"
@@ -271,27 +271,27 @@ export default function AdminProducts() {
                     value={formData.price}
                     onChange={handleInputChange}
                     placeholder="14999"
-                    className="w-full bg-neutral-50 dark:bg-neutral-900 border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-foreground font-semibold"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 font-semibold text-white placeholder:text-zinc-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2">Description</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-zinc-300">Description</label>
                 <textarea
                   name="description"
                   rows={3}
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder="Describe the artwork, materials used, frame quality..."
-                  className="w-full bg-neutral-50 dark:bg-neutral-900 border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-foreground resize-none"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 resize-none text-white placeholder:text-zinc-500"
                 ></textarea>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 mt-6"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-sm uppercase tracking-widest transition-colors shadow-lg flex items-center justify-center gap-2 mt-6"
               >
                 {isSubmitting ? (
                   <>
