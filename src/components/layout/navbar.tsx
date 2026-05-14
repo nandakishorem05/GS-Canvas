@@ -71,9 +71,9 @@ export function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-4">
-          <button className="text-foreground/80 hover:text-foreground transition-colors hidden sm:block">
+          <Link href="/admin" className="text-foreground/80 hover:text-foreground transition-colors hidden sm:block">
             <User size={20} />
-          </button>
+          </Link>
           <button className="text-foreground/80 hover:text-foreground transition-colors relative">
             <ShoppingBag size={20} />
             <span className="absolute -top-2 -right-2 bg-black text-white dark:bg-white dark:text-black text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
