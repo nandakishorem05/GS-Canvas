@@ -3,17 +3,50 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Heart, Share2, Star, Truck } from "lucide-react";
+import connectToDatabase from "@/lib/mongodb";
+import { Product } from "@/lib/models/Product";
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = mockProducts.find(p => p.id === id);
-
-  if (!product) {
-    notFound();
+  
+  let product: any = null;
+  let categoryName = "Canvas Prints";
+  
+  // Try fetching from MongoDB first
+  try {
+    await connectToDatabase();
+    if (id.length === 24) { // Valid MongoDB ObjectId
+      const liveProduct = await Product.findById(id).populate('category', 'name');
+      if (liveProduct) {
+        categoryName = liveProduct.category?.name || "Canvas Prints";
+        product = {
+          id: liveProduct._id.toString(),
+          title: liveProduct.title,
+          category: categoryName,
+          price: liveProduct.price,
+          image: liveProduct.images && liveProduct.images[0] ? liveProduct.images[0] : "/canvas-sample.png",
+          description: liveProduct.description,
+          isBestSeller: liveProduct.isFeatured || false,
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch live product details:", error);
   }
 
-  // Find related products
-  const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 3);
+  // Fallback to mock data if not found in DB
+  if (!product) {
+    const mockMatch = mockProducts.find(p => p.id === id);
+    if (mockMatch) {
+      product = mockMatch;
+      categoryName = mockMatch.category;
+    } else {
+      notFound();
+    }
+  }
+
+  // Find related products (fallback to mock slice)
+  const relatedProducts = mockProducts.filter(p => p.id !== product.id).slice(0, 3);
 
   return (
     <div className="container mx-auto px-6 md:px-12 py-8">
@@ -23,7 +56,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <ChevronRight size={12} />
         <Link href="/shop" className="hover:text-foreground transition-colors">Shop</Link>
         <ChevronRight size={12} />
-        <span className="text-foreground">{product.category}</span>
+        <span className="text-foreground">{categoryName}</span>
       </nav>
 
       <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
@@ -64,7 +97,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
              <div className="mb-8">
                <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">{product.title}</h1>
                <div className="flex items-center gap-4 text-sm mb-4">
-                 <span className="font-heading text-2xl">${product.price}</span>
+                 <span className="font-heading text-2xl">₹{product.price.toLocaleString('en-IN')}</span>
                  <div className="flex items-center gap-1 text-yellow-500">
                     {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="currentColor" />)}
                     <span className="text-foreground/50 ml-1">(42)</span>
@@ -108,15 +141,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                         <span className="text-[10px] uppercase text-foreground/60 group-hover:text-foreground">{f.name}</span>
                       </button>
                     ))}
-                 </div>
+                  </div>
                </div>
              </div>
 
              {/* Actions */}
              <div className="flex flex-col gap-4 mb-8">
-               <button className="w-full bg-black text-white dark:bg-white dark:text-black py-4 font-bold tracking-widest uppercase hover:opacity-90 transition-opacity">
-                 Add to Cart - ${product.price}
-               </button>
+               <Link
+                 href={`/checkout?item=${product.id}&price=${product.price}&title=${encodeURIComponent(product.title)}&img=${encodeURIComponent(product.image)}`}
+                 className="w-full text-center bg-black text-white dark:bg-white dark:text-black py-4 font-bold tracking-widest uppercase hover:opacity-90 transition-opacity block rounded-md shadow-md"
+               >
+                 Proceed to Checkout - ₹{product.price.toLocaleString('en-IN')}
+               </Link>
                <div className="flex gap-4">
                  <button className="flex-1 border border-border py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
                    <Heart size={18} /> Wishlist
@@ -136,7 +172,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                     <p className="text-xs text-foreground/60">Delivered within 5-7 business days.</p>
                   </div>
                 </div>
-                {/* Details Accordion placeholder */}
                 <div className="border border-border p-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
                   <h4 className="font-bold text-sm flex justify-between">Product Details <span>+</span></h4>
                 </div>
@@ -151,13 +186,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <div className="mt-32 border-t border-border pt-16">
           <h2 className="font-heading text-3xl font-bold mb-10 text-center">You May Also Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {relatedProducts.map(p => (
+            {relatedProducts.map((p: any) => (
               <Link key={p.id} href={`/product/${p.id}`} className="group block">
                 <div className="relative aspect-[3/4] bg-neutral-100 dark:bg-neutral-900 mb-4 overflow-hidden">
                   <Image src={p.image} alt={p.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
                 </div>
                 <h3 className="font-heading text-lg font-semibold">{p.title}</h3>
-                <span className="font-medium text-sm text-foreground/70">${p.price}</span>
+                <span className="font-medium text-sm text-foreground/70">₹{p.price.toLocaleString('en-IN')}</span>
               </Link>
             ))}
           </div>

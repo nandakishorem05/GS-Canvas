@@ -1,19 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
-import { mockProducts, categories, styles } from "@/lib/mock-data";
+import { Search, SlidersHorizontal, ChevronDown, Loader2 } from "lucide-react";
+import { mockProducts, categories as mockCategories, styles } from "@/lib/mock-data";
+
+interface ProductItem {
+  id: string;
+  title: string;
+  category: string;
+  price: number;
+  image: string;
+  description?: string;
+  style?: string;
+  isBestSeller?: boolean;
+}
 
 export default function ShopPage() {
+  const [products, setProducts] = useState<ProductItem[]>(mockProducts);
+  const [categories, setCategories] = useState<string[]>(mockCategories);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStyle, setSelectedStyle] = useState("All");
-  const [priceRange, setPriceRange] = useState<number>(500);
+  const [priceRange, setPriceRange] = useState<number>(50000);
 
-  const filteredProducts = mockProducts.filter((p) => {
+  useEffect(() => {
+    async function fetchLiveProducts() {
+      try {
+        const res = await fetch('/api/products');
+        if (res.ok) {
+          const liveData = await res.json();
+          if (liveData && liveData.length > 0) {
+            const mappedProducts: ProductItem[] = liveData.map((p: any) => ({
+              id: p._id.toString(),
+              title: p.title,
+              category: p.category?.name || p.category || 'Canvas Prints',
+              price: p.price,
+              image: p.images && p.images[0] ? p.images[0] : '/canvas-sample.png',
+              description: p.description,
+              style: p.tags && p.tags[0] ? p.tags[0] : 'Modern',
+              isBestSeller: p.isFeatured || false,
+            }));
+            setProducts(mappedProducts);
+
+            // Extract unique categories from live data
+            const uniqueCategories = Array.from(new Set(mappedProducts.map(p => p.category)));
+            setCategories(["All", ...uniqueCategories]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch live products, using mock data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchLiveProducts();
+  }, []);
+
+  const filteredProducts = products.filter((p) => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
     const matchesStyle = selectedStyle === "All" || p.style === selectedStyle;
@@ -79,12 +128,13 @@ export default function ShopPage() {
 
           <div>
             <h3 className="text-sm font-semibold text-foreground/70 uppercase tracking-wider mb-4 flex justify-between">
-              Max Price <span>${priceRange}</span>
+              Max Price <span>₹{priceRange.toLocaleString('en-IN')}</span>
             </h3>
             <input
               type="range"
-              min="0"
-              max="1000"
+              min="1000"
+              max="50000"
+              step="1000"
               value={priceRange}
               onChange={(e) => setPriceRange(Number(e.target.value))}
               className="w-full accent-black dark:accent-white"
@@ -102,12 +152,17 @@ export default function ShopPage() {
           </button>
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {isLoading ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center">
+            <Loader2 className="animate-spin mb-4" size={32} />
+            <p className="text-foreground/60">Loading live collection...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="py-20 text-center">
             <h3 className="font-heading text-2xl mb-2">No artworks found.</h3>
             <p className="text-foreground/60">Try adjusting your filters or search query.</p>
             <button 
-              onClick={() => { setSearchQuery(""); setSelectedCategory("All"); setSelectedStyle("All"); setPriceRange(500); }}
+              onClick={() => { setSearchQuery(""); setSelectedCategory("All"); setSelectedStyle("All"); setPriceRange(50000); }}
               className="mt-6 border-b border-foreground font-medium pb-1"
             >
               Clear all filters
@@ -140,7 +195,7 @@ export default function ShopPage() {
                       <h3 className="font-heading text-lg font-semibold mb-1 group-hover:text-foreground/80 transition-colors">{product.title}</h3>
                       <p className="text-sm text-foreground/50">{product.category}</p>
                     </div>
-                    <span className="font-medium">${product.price}</span>
+                    <span className="font-medium">₹{product.price.toLocaleString('en-IN')}</span>
                   </div>
                 </motion.div>
               </Link>

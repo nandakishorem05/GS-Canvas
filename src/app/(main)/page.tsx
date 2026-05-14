@@ -177,7 +177,7 @@ export default function Home() {
               </div>
               <div className="absolute bottom-4 left-4 right-4 bg-white/10 backdrop-blur-md p-4 flex justify-between items-center border border-white/20 rounded-lg">
                 <span className="text-sm font-medium text-white drop-shadow-md">18" x 24" Premium Frame</span>
-                <span className="font-heading font-bold text-lg text-white drop-shadow-md">$149</span>
+                <span className="font-heading font-bold text-lg text-white drop-shadow-md">₹11,999</span>
               </div>
             </motion.div>
           </div>
